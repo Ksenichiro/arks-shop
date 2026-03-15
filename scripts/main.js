@@ -288,6 +288,7 @@ class ArksSplitCostsApp extends FormApplication {
     html.find("input[name='totalCost']").on("input change", refresh);
     html.find("[data-role='actor-toggle']").on("change", refresh);
     html.find("[data-role='contribution']").on("input change", refresh);
+    html.find("[data-action='split-even']").on("click", this.#onSplitEven.bind(this));
 
     refresh();
   }
@@ -336,6 +337,66 @@ class ArksSplitCostsApp extends FormApplication {
     if (submitButton) {
       submitButton.disabled = totalCostCopper <= 0 || selectedCount === 0 || remainingCopper !== 0 || hasOverdrawnActor;
     }
+  }
+
+  #onSplitEven(event) {
+    event.preventDefault();
+
+    const form = this.form;
+    if (!form) return;
+
+    const totalCostCopper = parseGpInput(form.querySelector("input[name='totalCost']")?.value);
+    if (totalCostCopper <= 0) {
+      ui.notifications.error(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.InvalidTotal"));
+      return;
+    }
+
+    const selectedRows = [];
+    let lockedCopper = 0;
+
+    for (const row of form.querySelectorAll(".arks-split-costs__row")) {
+      const toggle = row.querySelector("[data-role='actor-toggle']");
+      const input = row.querySelector("[data-role='contribution']");
+      if (!toggle?.checked || !input) continue;
+
+      const contributionCopper = parseGpInput(input.value);
+      const isLocked = contributionCopper > 0;
+
+      selectedRows.push({ input, isLocked, contributionCopper });
+      if (isLocked) lockedCopper += contributionCopper;
+    }
+
+    if (!selectedRows.length) {
+      ui.notifications.error(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.NoPool"));
+      return;
+    }
+
+    if (lockedCopper > totalCostCopper) {
+      ui.notifications.error(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.LockedTooHigh"));
+      return;
+    }
+
+    const remainingCopper = totalCostCopper - lockedCopper;
+    const adjustableRows = selectedRows.filter((row) => !row.isLocked);
+
+    if (!adjustableRows.length) {
+      if (remainingCopper > 0) {
+        ui.notifications.warn(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.NoAdjustableActors"));
+      }
+      this.#refreshState(form);
+      return;
+    }
+
+    const baseShare = Math.floor(remainingCopper / adjustableRows.length);
+    let remainderCopper = remainingCopper - baseShare * adjustableRows.length;
+
+    adjustableRows.forEach((row) => {
+      const shareCopper = baseShare + (remainderCopper > 0 ? 1 : 0);
+      if (remainderCopper > 0) remainderCopper -= 1;
+      row.input.value = formatGp(shareCopper / 100);
+    });
+
+    this.#refreshState(form);
   }
 
   async _updateObject() {

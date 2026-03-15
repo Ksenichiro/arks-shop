@@ -20,6 +20,7 @@
       "Remaining": "Remaining",
       "Available": "Available",
       "Contribution": "Will pay",
+      "SplitEven": "Split Even",
       "Confirm": "Confirm split",
       "NoCharacters": "No owned characters are available for this split.",
       "Errors": {
@@ -27,7 +28,9 @@
         "NoPool": "Select at least one character to split this cost.",
         "TotalMismatch": "Assigned contributions must exactly match the total cost.",
         "InvalidActor": "One of the selected characters is not available.",
+        "LockedTooHigh": "Existing non-zero contributions already exceed the total cost.",
         "NotEnoughGold": "{actor} does not have enough money to pay {cost} gp.",
+        "NoAdjustableActors": "All selected characters already have non-zero contributions. Clear one value to split the remainder.",
         "NoPayments": "At least one selected character must pay part of the cost."
       },
       "Messages": {
