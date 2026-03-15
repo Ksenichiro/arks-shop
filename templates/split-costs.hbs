@@ -1,0 +1,57 @@
+<form class="arks-split-costs">
+  <section class="arks-split-costs__summary">
+    <label class="arks-split-costs__field">
+      <span>{{localize "ARKSSHOP.SplitCosts.TotalCost"}}</span>
+      <input type="number" name="totalCost" min="0" step="0.01" value="{{totalCost}}" placeholder="0">
+    </label>
+
+    <div class="arks-split-costs__totals">
+      <div class="arks-split-costs__total-card">
+        <span>{{localize "ARKSSHOP.SplitCosts.Assigned"}}</span>
+        <strong data-role="assigned-total">0 gp</strong>
+      </div>
+      <div class="arks-split-costs__total-card">
+        <span>{{localize "ARKSSHOP.SplitCosts.Remaining"}}</span>
+        <strong data-role="remaining-total">0 gp</strong>
+      </div>
+    </div>
+  </section>
+
+  {{#if hasCharacters}}
+    <section class="arks-split-costs__rows">
+      {{#each characters}}
+        <div class="arks-split-costs__row" data-actor-id="{{id}}" data-available-copper="{{availableCopper}}">
+          <label class="arks-split-costs__actor">
+            <input type="checkbox" data-role="actor-toggle" {{#if selected}}checked{{/if}}>
+            <span class="arks-split-costs__actor-details">
+              <strong>{{name}}</strong>
+              <span>{{localize "ARKSSHOP.SplitCosts.Available"}}: {{availableGold}} gp</span>
+            </span>
+          </label>
+
+          <label class="arks-split-costs__pay">
+            <span>{{localize "ARKSSHOP.SplitCosts.Contribution"}}</span>
+            <input
+              type="number"
+              data-role="contribution"
+              min="0"
+              step="0.01"
+              value="{{contribution}}"
+              {{#unless selected}}disabled{{/unless}}
+            >
+          </label>
+        </div>
+      {{/each}}
+    </section>
+  {{else}}
+    <section class="arks-shop-shell__empty">
+      <p>{{localize "ARKSSHOP.SplitCosts.NoCharacters"}}</p>
+    </section>
+  {{/if}}
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit">
+      <i class="fas fa-check"></i> {{localize "ARKSSHOP.SplitCosts.Confirm"}}
+    </button>
+  </footer>
+</form>

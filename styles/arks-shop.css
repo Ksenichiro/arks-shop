@@ -239,6 +239,109 @@
   padding: 1rem;
 }
 
+.arks-split-costs {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.arks-split-costs__summary {
+  display: grid;
+  gap: 1rem;
+}
+
+.arks-split-costs__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.arks-split-costs__field input,
+.arks-split-costs__pay input {
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 8px;
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+}
+
+.arks-split-costs__totals {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.arks-split-costs__total-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
+}
+
+.arks-split-costs__total-card strong.is-clear {
+  color: #15803d;
+}
+
+.arks-split-costs__total-card strong.is-short {
+  color: #b45309;
+}
+
+.arks-split-costs__total-card strong.is-over {
+  color: #b91c1c;
+}
+
+.arks-split-costs__rows {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.arks-split-costs__row {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  padding: 0.85rem 1rem;
+}
+
+.arks-split-costs__row.is-selected {
+  border-color: rgba(37, 99, 235, 0.35);
+}
+
+.arks-split-costs__row.is-overdrawn {
+  border-color: rgba(185, 28, 28, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(185, 28, 28, 0.08);
+}
+
+.arks-split-costs__actor {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.arks-split-costs__actor input {
+  flex: 0 0 auto;
+}
+
+.arks-split-costs__actor-details {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.arks-split-costs__actor-details span {
+  color: #52606d;
+  font-size: 0.9rem;
+}
+
+.arks-split-costs__pay {
+  display: grid;
+  gap: 0.35rem;
+}
+
 .arks-shop-compendium-settings__list {
   display: grid;
   gap: 0.5rem;
@@ -260,6 +363,8 @@
 
 @media (max-width: 760px) {
   .arks-shop-shell__toolbar,
+  .arks-split-costs__totals,
+  .arks-split-costs__row,
   .arks-shop-item,
   .arks-shop-item__controls {
     grid-template-columns: 1fr;

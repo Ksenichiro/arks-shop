@@ -6,6 +6,7 @@ const SELLABLE_ITEM_TYPES = new Set(["item", "weapon", "armor"]);
 const ITEM_DIRECTORY_ID = "items";
 
 let shopApp;
+let splitCostsApp;
 let shopInventoryCache = [];
 let shopInventoryCacheKey = "";
 
@@ -244,6 +245,171 @@ class ArksShopCompendiumSettingsForm extends FormApplication {
   }
 }
 
+class ArksSplitCostsApp extends FormApplication {
+  constructor(options = {}) {
+    super(options);
+    this.totalCost = options.totalCost ?? "";
+    this.selectedActors = new Set(options.actorIds ?? []);
+    this.contributions = foundry.utils.deepClone(options.contributions ?? {});
+  }
+
+  static get defaultOptions() {
+    return foundry.utils.mergeObject(super.defaultOptions, {
+      id: `${MODULE_ID}-split-costs`,
+      title: game.i18n.localize("ARKSSHOP.SplitCosts.Title"),
+      template: `modules/${MODULE_ID}/templates/split-costs.hbs`,
+      width: 680,
+      height: "auto",
+      closeOnSubmit: true
+    });
+  }
+
+  getData() {
+    const characters = getAvailableCharacters();
+
+    return {
+      totalCost: this.totalCost,
+      hasCharacters: characters.length > 0,
+      characters: characters.map((actor) => ({
+        id: actor.id,
+        name: actor.name,
+        selected: this.selectedActors.has(actor.id),
+        contribution: this.contributions[actor.id] ?? "",
+        availableGold: formatGp(actor.getTotalMoneyGC()),
+        availableCopper: gpToCopper(actor.getTotalMoneyGC())
+      }))
+    };
+  }
+
+  activateListeners(html) {
+    super.activateListeners(html);
+
+    const refresh = this.#refreshState.bind(this, html);
+    html.find("input[name='totalCost']").on("input change", refresh);
+    html.find("[data-role='actor-toggle']").on("change", refresh);
+    html.find("[data-role='contribution']").on("input change", refresh);
+
+    refresh();
+  }
+
+  #refreshState(html) {
+    const root = html[0] ?? html;
+    if (!root) return;
+
+    const totalCostCopper = parseGpInput(root.querySelector("input[name='totalCost']")?.value);
+    let assignedCopper = 0;
+    let selectedCount = 0;
+    let hasOverdrawnActor = false;
+
+    root.querySelectorAll(".arks-split-costs__row").forEach((row) => {
+      const toggle = row.querySelector("[data-role='actor-toggle']");
+      const input = row.querySelector("[data-role='contribution']");
+      const availableCopper = Number(row.dataset.availableCopper ?? 0);
+      const selected = Boolean(toggle?.checked);
+      const contributionCopper = selected ? parseGpInput(input?.value) : 0;
+      const isOverdrawn = selected && contributionCopper > availableCopper;
+
+      if (input) input.disabled = !selected;
+      row.classList.toggle("is-selected", selected);
+      row.classList.toggle("is-overdrawn", isOverdrawn);
+
+      if (selected) {
+        assignedCopper += contributionCopper;
+        selectedCount += 1;
+      }
+      if (isOverdrawn) hasOverdrawnActor = true;
+    });
+
+    const remainingCopper = totalCostCopper - assignedCopper;
+    const assignedElement = root.querySelector("[data-role='assigned-total']");
+    const remainingElement = root.querySelector("[data-role='remaining-total']");
+    const submitButton = root.querySelector("button[type='submit']");
+
+    if (assignedElement) assignedElement.textContent = `${formatGp(assignedCopper / 100)} gp`;
+    if (remainingElement) {
+      remainingElement.textContent = `${formatGp(remainingCopper / 100)} gp`;
+      remainingElement.classList.toggle("is-clear", remainingCopper === 0);
+      remainingElement.classList.toggle("is-short", remainingCopper > 0);
+      remainingElement.classList.toggle("is-over", remainingCopper < 0);
+    }
+
+    if (submitButton) {
+      submitButton.disabled = totalCostCopper <= 0 || selectedCount === 0 || remainingCopper !== 0 || hasOverdrawnActor;
+    }
+  }
+
+  async _updateObject() {
+    const form = this.form;
+    if (!form) return;
+
+    const totalCostCopper = parseGpInput(form.querySelector("input[name='totalCost']")?.value);
+    const selections = [];
+    let assignedCopper = 0;
+
+    for (const row of form.querySelectorAll(".arks-split-costs__row")) {
+      const toggle = row.querySelector("[data-role='actor-toggle']");
+      const input = row.querySelector("[data-role='contribution']");
+      if (!toggle?.checked) continue;
+
+      const actorId = row.dataset.actorId;
+      const contributionCopper = parseGpInput(input?.value);
+      selections.push({ actorId, contributionCopper });
+      assignedCopper += contributionCopper;
+    }
+
+    if (totalCostCopper <= 0) {
+      notifyAndThrow(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.InvalidTotal"));
+    }
+
+    if (!selections.length) {
+      notifyAndThrow(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.NoPool"));
+    }
+
+    if (assignedCopper !== totalCostCopper) {
+      notifyAndThrow(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.TotalMismatch"));
+    }
+
+    const paidBy = [];
+    for (const selection of selections) {
+      if (selection.contributionCopper <= 0) continue;
+
+      const actor = game.actors.get(selection.actorId);
+      if (!actor || actor.type !== "character" || (!game.user.isGM && !actor.isOwner)) {
+        notifyAndThrow(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.InvalidActor"));
+      }
+
+      const contributionGp = selection.contributionCopper / 100;
+      if (actor.getTotalMoneyGC() < contributionGp) {
+        notifyAndThrow(
+          game.i18n.format("ARKSSHOP.SplitCosts.Errors.NotEnoughGold", {
+            actor: actor.name,
+            cost: formatGp(contributionGp)
+          })
+        );
+      }
+
+      await deductActorMoney(actor, contributionGp);
+      paidBy.push({ actor, contributionGp });
+    }
+
+    if (!paidBy.length) {
+      notifyAndThrow(game.i18n.localize("ARKSSHOP.SplitCosts.Errors.NoPayments"));
+    }
+
+    await createSplitCostsChatMessage(totalCostCopper / 100, paidBy);
+    ui.notifications.info(
+      game.i18n.format("ARKSSHOP.SplitCosts.Messages.Applied", {
+        total: formatGp(totalCostCopper / 100)
+      })
+    );
+  }
+}
+
+function notifyAndThrow(message) {
+  ui.notifications.error(message);
+  throw new Error(message);
+}
+
 function isEligibleEquipmentPack(pack) {
   if (pack.documentName !== "Item") return false;
 
@@ -307,6 +473,12 @@ function getItemCost(item) {
 function formatGp(value) {
   const rounded = (Math.round(Number(value) * 100) / 100).toFixed(2);
   return rounded.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+function parseGpInput(value) {
+  const parsed = Number.parseFloat(`${value ?? ""}`.replace(",", "."));
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return gpToCopper(parsed);
 }
 
 function gpToCopper(value) {
@@ -479,6 +651,22 @@ async function createPurchaseChatMessage(actor, item, quantity, totalPriceGp) {
   });
 }
 
+async function createSplitCostsChatMessage(totalCostGp, paidBy) {
+  const rows = paidBy
+    .map(({ actor, contributionGp }) => `<li><strong>${actor.name}</strong>: ${formatGp(contributionGp)} gp</li>`)
+    .join("");
+
+  await ChatMessage.create({
+    speaker: ChatMessage.getSpeaker(),
+    content: `
+      <p>${game.i18n.format("ARKSSHOP.SplitCosts.Messages.ChatIntro", {
+        total: formatGp(totalCostGp)
+      })}</p>
+      <ul>${rows}</ul>
+    `
+  });
+}
+
 async function purchaseShopItem({ actorId, itemUuid, quantity }) {
   const actor = game.actors.get(actorId);
   if (!actorId || !actor || actor.type !== "character" || (!game.user.isGM && !actor.isOwner)) {
@@ -587,6 +775,12 @@ function createApi() {
       shopApp.render(true);
       return shopApp;
     },
+    openSplitCosts: (options = {}) => {
+      splitCostsApp?.close();
+      splitCostsApp = new ArksSplitCostsApp(options);
+      splitCostsApp.render(true);
+      return splitCostsApp;
+    },
     getSelectedEquipmentPacks,
     refreshInventory: resetShopInventoryCache
   };
@@ -625,17 +819,34 @@ function addDirectoryButton(app, html) {
   if (!game.settings.get(MODULE_ID, "showActorsDirectoryButton")) return;
 
   const root = getRootElement(html);
-  if (!root || root.querySelector(`.${MODULE_ID}-open-shop`)) return;
+  if (!root) return;
 
   const footer = ensureDirectoryFooter(root);
+  const buttonConfigs = [
+    {
+      className: `${MODULE_ID}-open-shop`,
+      icon: "fas fa-store",
+      label: game.i18n.localize("ARKSSHOP.OpenShop"),
+      onClick: () => game.ARKSShop.openShop()
+    },
+    {
+      className: `${MODULE_ID}-split-costs`,
+      icon: "fas fa-coins",
+      label: game.i18n.localize("ARKSSHOP.SplitCosts.Button"),
+      onClick: () => game.ARKSShop.openSplitCosts()
+    }
+  ];
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = `${MODULE_ID}-open-shop`;
-  button.innerHTML = `<i class="fas fa-store"></i> ${game.i18n.localize("ARKSSHOP.OpenShop")}`;
+  for (const config of buttonConfigs) {
+    if (root.querySelector(`.${config.className}`)) continue;
 
-  button.addEventListener("click", () => game.ARKSShop.openShop());
-  footer.appendChild(button);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = config.className;
+    button.innerHTML = `<i class="${config.icon}"></i> ${config.label}`;
+    button.addEventListener("click", config.onClick);
+    footer.appendChild(button);
+  }
 }
 
 Hooks.once("init", async () => {
@@ -646,7 +857,8 @@ Hooks.once("init", async () => {
 
   await loadTemplates([
     `modules/${MODULE_ID}/templates/shop-shell.hbs`,
-    `modules/${MODULE_ID}/templates/settings-compendiums.hbs`
+    `modules/${MODULE_ID}/templates/settings-compendiums.hbs`,
+    `modules/${MODULE_ID}/templates/split-costs.hbs`
   ]);
 });
 

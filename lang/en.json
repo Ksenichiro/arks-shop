@@ -12,6 +12,29 @@
     "EmptyCharacters": "No owned character is available for purchases.",
     "EmptyInventory": "No sellable shop items were found in the selected compendiums.",
     "Buy": "Buy",
+    "SplitCosts": {
+      "Button": "Split Costs",
+      "Title": "Split Costs",
+      "TotalCost": "Abstract cost",
+      "Assigned": "Assigned",
+      "Remaining": "Remaining",
+      "Available": "Available",
+      "Contribution": "Will pay",
+      "Confirm": "Confirm split",
+      "NoCharacters": "No owned characters are available for this split.",
+      "Errors": {
+        "InvalidTotal": "Enter a total cost greater than 0.",
+        "NoPool": "Select at least one character to split this cost.",
+        "TotalMismatch": "Assigned contributions must exactly match the total cost.",
+        "InvalidActor": "One of the selected characters is not available.",
+        "NotEnoughGold": "{actor} does not have enough money to pay {cost} gp.",
+        "NoPayments": "At least one selected character must pay part of the cost."
+      },
+      "Messages": {
+        "Applied": "Split cost applied: {total} gp.",
+        "ChatIntro": "Split cost applied for a total of {total} gp:"
+      }
+    },
     "ChatSeedMessage": "ARKS Shop boilerplate is active.",
     "ItemTypes": {
       "item": "Misc",
