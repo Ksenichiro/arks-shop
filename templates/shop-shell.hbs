@@ -84,6 +84,7 @@
           data-search="{{searchText}}"
           data-compendium="{{sourceCollection}}"
           data-item-type="{{type}}"
+          data-base-price-copper="{{priceCopper}}"
           data-can-purchase="{{#if canPurchase}}true{{else}}false{{/if}}"
         >
           <div class="arks-shop-item__image" style="background-image: url({{img}})"></div>
@@ -91,9 +92,30 @@
           <div class="arks-shop-item__details">
             <button type="button" class="arks-shop-item__name" data-action="open-source">{{name}}</button>
             <div class="arks-shop-item__meta">{{typeLabel}} | {{sourceLabel}}</div>
+
+            {{#if hasMasterworkOptions}}
+              <label class="arks-shop-item__variant">
+                <span>{{localize "ARKSSHOP.Masterwork.Label"}}</span>
+                <select name="masterwork">
+                  <option value="" data-price-adjustment-copper="0" data-summary="">
+                    {{localize "ARKSSHOP.Masterwork.Standard"}}
+                  </option>
+                  {{#each masterworkOptions}}
+                    <option
+                      value="{{id}}"
+                      data-price-adjustment-copper="{{priceDeltaCopper}}"
+                      data-summary="{{summary}}"
+                    >
+                      {{label}}
+                    </option>
+                  {{/each}}
+                </select>
+              </label>
+              <div class="arks-shop-item__variant-summary" data-role="masterwork-summary"></div>
+            {{/if}}
           </div>
 
-          <div class="arks-shop-item__price">{{formattedPrice}} gp</div>
+          <div class="arks-shop-item__price" data-role="item-price">{{formattedPrice}} gp</div>
 
           <div class="arks-shop-item__controls">
             <input type="number" name="quantity" min="1" step="1" value="1">

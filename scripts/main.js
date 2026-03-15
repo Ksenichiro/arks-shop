@@ -3,6 +3,8 @@ const EQUIPMENT_COMPENDIUM_SETTING = "selectedEquipmentCompendiums";
 const EQUIPMENT_COMPENDIUMS_INITIALIZED_SETTING = "equipmentCompendiumsInitialized";
 const EQUIPMENT_PACK_PATTERN = /(equipment|weapon|armor|clothing|gear|money)/i;
 const SELLABLE_ITEM_TYPES = new Set(["item", "weapon", "armor"]);
+const INSTRUMENT_ITEM_PATTERN =
+  /\b(instrument|lute|lyre|harp|drum|flute|pan flute|pipes?|bagpipes?|horn|trumpet|shawm|fiddle|viol|mandolin|gittern|recorder|cymbal|tambourine)\b/i;
 const ITEM_DIRECTORY_ID = "items";
 
 let shopApp;
@@ -96,8 +98,10 @@ class ArksShopApp extends Application {
       hasItems: items.length > 0,
       items: items.map((item) => ({
         ...item,
+        priceCopper: gpToCopper(item.priceGp),
         formattedPrice: formatGp(item.priceGp),
-        canPurchase: selectedActor ? selectedActorGold >= item.priceGp : false
+        canPurchase: selectedActor ? selectedActorGold >= item.priceGp : false,
+        hasMasterworkOptions: item.masterworkOptions.length > 0
       }))
     };
   }
@@ -118,7 +122,10 @@ class ArksShopApp extends Application {
     html.find("[data-action='toggle-filter']").on("click", this.#onToggleFilter.bind(this));
     html.find("[data-action='buy-item']").on("click", this.#onBuyItem.bind(this));
     html.find("[data-action='open-source']").on("click", this.#onOpenSource.bind(this));
+    html.find("input[name='quantity']").on("input change", this.#onPurchaseInputChange.bind(this, html));
+    html.find("select[name='masterwork']").on("change", this.#onPurchaseInputChange.bind(this, html));
 
+    this.#refreshPurchaseState(html);
     this.#applyItemFilters(html);
   }
 
@@ -158,6 +165,42 @@ class ArksShopApp extends Application {
     });
   }
 
+  #onPurchaseInputChange(html) {
+    this.#refreshPurchaseState(html);
+    this.#applyItemFilters(html);
+  }
+
+  #refreshPurchaseState(html) {
+    const root = getRootElement(html);
+    if (!root) return;
+
+    const selectedActor = getAvailableCharacters().find((actor) => actor.id === this.selectedActorId) ?? null;
+    const availableCopper = selectedActor ? gpToCopper(selectedActor.getTotalMoneyGC()) : 0;
+
+    root.querySelectorAll(".arks-shop-item").forEach((row) => {
+      this.#refreshPurchaseRow(row, availableCopper, Boolean(selectedActor));
+    });
+  }
+
+  #refreshPurchaseRow(row, availableCopper, hasActor) {
+    const priceCopper = getRowUnitPriceCopper(row);
+    const quantity = Math.max(1, Number.parseInt(row.querySelector("input[name='quantity']")?.value ?? "1", 10) || 1);
+    const totalCopper = priceCopper * quantity;
+    const canPurchase = hasActor && availableCopper >= totalCopper;
+    const priceElement = row.querySelector("[data-role='item-price']");
+    const summaryElement = row.querySelector("[data-role='masterwork-summary']");
+    const selectedOption = row.querySelector("select[name='masterwork'] option:checked");
+    const summary = selectedOption?.dataset.summary?.trim() ?? "";
+
+    row.dataset.canPurchase = canPurchase ? "true" : "false";
+
+    if (priceElement) priceElement.textContent = `${formatGp(priceCopper / 100)} gp`;
+    if (summaryElement) summaryElement.textContent = summary;
+
+    const buyButton = row.querySelector("[data-action='buy-item']");
+    if (buyButton) buyButton.disabled = !canPurchase;
+  }
+
   #onToggleFilter(event) {
     event.preventDefault();
 
@@ -194,12 +237,14 @@ class ArksShopApp extends Application {
     if (!row) return;
 
     const quantity = Math.max(1, Number.parseInt(row.querySelector("input[name='quantity']")?.value ?? "1", 10) || 1);
+    const masterworkId = row.querySelector("select[name='masterwork']")?.value ?? "";
 
     try {
       await purchaseShopItem({
         actorId: this.selectedActorId,
         itemUuid: row.dataset.itemUuid,
-        quantity
+        quantity,
+        masterworkId
       });
       this.render(false);
     } catch (error) {
@@ -526,9 +571,71 @@ function getTypeLabel(type) {
   return label.startsWith("ARKSSHOP.") ? type : label;
 }
 
+function stripHtml(value) {
+  return `${value ?? ""}`.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function isInstrumentItem(item) {
+  if (item?.type !== "item") return false;
+
+  const searchText = [item.name, item.system?.subtype, item.system?.description]
+    .map((value) => stripHtml(value))
+    .join(" ");
+
+  return INSTRUMENT_ITEM_PATTERN.test(searchText);
+}
+
+function getMasterworkOptions(item) {
+  if (item?.type === "weapon") {
+    return [
+      createMasterworkOption("weapon-hit", 80, "WeaponHit", "WeaponHitName", "WeaponHitSummary"),
+      createMasterworkOption("weapon-damage", 80, "WeaponDamage", "WeaponDamageName", "WeaponDamageSummary"),
+      createMasterworkOption("weapon-both", 650, "WeaponBoth", "WeaponBothName", "WeaponBothSummary")
+    ];
+  }
+
+  if (item?.type === "armor") {
+    return [
+      createMasterworkOption("armor-light", 80, "ArmorLight", "ArmorLightName", "ArmorLightSummary"),
+      createMasterworkOption("armor-ac", 650, "ArmorAc", "ArmorAcName", "ArmorAcSummary")
+    ];
+  }
+
+  if (isInstrumentItem(item)) {
+    return [
+      createMasterworkOption("instrument-perf-1", 80, "InstrumentOne", "InstrumentOneName", "InstrumentOneSummary"),
+      createMasterworkOption("instrument-perf-2", 650, "InstrumentTwo", "InstrumentTwoName", "InstrumentTwoSummary")
+    ];
+  }
+
+  return [];
+}
+
+function createMasterworkOption(id, priceDeltaGp, labelKey, nameKey, summaryKey) {
+  return {
+    id,
+    label: game.i18n.format(`ARKSSHOP.Masterwork.Options.${labelKey}`, {
+      price: formatGp(priceDeltaGp)
+    }),
+    nameLabel: game.i18n.localize(`ARKSSHOP.Masterwork.Options.${nameKey}`),
+    summary: game.i18n.localize(`ARKSSHOP.Masterwork.Options.${summaryKey}`),
+    priceDeltaGp,
+    priceDeltaCopper: gpToCopper(priceDeltaGp)
+  };
+}
+
+function getMasterworkOption(item, masterworkId) {
+  if (!masterworkId) return null;
+  return getMasterworkOptions(item).find((option) => option.id === masterworkId) ?? null;
+}
+
 function getItemCost(item) {
   const cost = Number(item.system?.cost ?? 0);
   return Number.isFinite(cost) ? cost : 0;
+}
+
+function getMasterworkAdjustedCost(item, masterworkOption) {
+  return getItemCost(item) + Number(masterworkOption?.priceDeltaGp ?? 0);
 }
 
 function formatGp(value) {
@@ -544,6 +651,58 @@ function parseGpInput(value) {
 
 function gpToCopper(value) {
   return Math.round(Number(value) * 100);
+}
+
+function getRowUnitPriceCopper(row) {
+  const basePriceCopper = Number(row?.dataset.basePriceCopper ?? 0);
+  const selectedOption = row?.querySelector("select[name='masterwork'] option:checked");
+  const adjustmentCopper = Number(selectedOption?.dataset.priceAdjustmentCopper ?? 0);
+  return basePriceCopper + adjustmentCopper;
+}
+
+function getNumericPropertyValue(data, path, fallback = 0) {
+  const value = foundry.utils.getProperty(data, path);
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function setBestNumericProperty(data, paths, delta, fallback = 0) {
+  for (const path of paths) {
+    if (foundry.utils.hasProperty(data, path)) {
+      const currentValue = getNumericPropertyValue(data, path, fallback);
+      foundry.utils.setProperty(data, path, currentValue + delta);
+      return;
+    }
+  }
+}
+
+function getWeight6Value(itemData) {
+  const explicitWeight6 = getNumericPropertyValue(itemData, "system.weight6", -1);
+  if (explicitWeight6 >= 0) return explicitWeight6;
+
+  const legacyWeight = getNumericPropertyValue(itemData, "system.weight", -1);
+  if (legacyWeight >= 0) return Math.floor(legacyWeight / 166.66);
+
+  return 0;
+}
+
+function applyFlatBonusToFormula(formula, bonus) {
+  const trimmed = `${formula ?? ""}`.trim();
+  if (!trimmed) return `${bonus}`;
+  return `${trimmed} + ${bonus}`;
+}
+
+function buildMasterworkName(itemName, masterworkOption) {
+  if (!masterworkOption) return itemName;
+  return `${itemName} (${masterworkOption.nameLabel})`;
+}
+
+function appendMasterworkDescription(description, masterworkOption) {
+  if (!masterworkOption) return description ?? "";
+
+  const currentDescription = `${description ?? ""}`.trim();
+  const note = `<p><strong>${game.i18n.localize("ARKSSHOP.Masterwork.NoteLabel")}:</strong> ${masterworkOption.summary}</p>`;
+  return currentDescription ? `${currentDescription}${note}` : note;
 }
 
 function getMoneyItems(actor) {
@@ -591,6 +750,8 @@ async function getShopInventory() {
       for (const document of documents) {
         if (!SELLABLE_ITEM_TYPES.has(document.type)) continue;
 
+        const masterworkOptions = getMasterworkOptions(document);
+
         inventory.push({
           uuid: document.uuid,
           name: document.name,
@@ -600,6 +761,7 @@ async function getShopInventory() {
           sourceCollection: pack.collection,
           sourceLabel: pack.metadata.label,
           priceGp: getItemCost(document),
+          masterworkOptions,
           searchText: `${document.name} ${pack.metadata.label} ${document.type}`.toLowerCase()
         });
       }
@@ -619,7 +781,71 @@ async function getShopInventory() {
   return inventory;
 }
 
-function prepareOwnedItemData(sourceItem) {
+function applyMasterworkToItemData(itemData, masterworkOption) {
+  if (!masterworkOption) return itemData;
+
+  itemData.name = buildMasterworkName(itemData.name, masterworkOption);
+  itemData.flags ??= {};
+  itemData.flags[MODULE_ID] = {
+    ...(itemData.flags[MODULE_ID] ?? {}),
+    masterwork: {
+      id: masterworkOption.id,
+      label: masterworkOption.nameLabel,
+      summary: masterworkOption.summary,
+      priceDeltaGp: masterworkOption.priceDeltaGp
+    }
+  };
+
+  if (foundry.utils.hasProperty(itemData, "system.cost")) {
+    const baseCost = getNumericPropertyValue(itemData, "system.cost", 0);
+    foundry.utils.setProperty(itemData, "system.cost", baseCost + masterworkOption.priceDeltaGp);
+  }
+
+  if (foundry.utils.hasProperty(itemData, "system.description")) {
+    foundry.utils.setProperty(
+      itemData,
+      "system.description",
+      appendMasterworkDescription(foundry.utils.getProperty(itemData, "system.description"), masterworkOption)
+    );
+  }
+
+  switch (masterworkOption.id) {
+    case "weapon-hit":
+      setBestNumericProperty(itemData, ["system.bonus"], 1, 0);
+      break;
+    case "weapon-damage":
+      foundry.utils.setProperty(
+        itemData,
+        "system.damage",
+        applyFlatBonusToFormula(foundry.utils.getProperty(itemData, "system.damage"), 1)
+      );
+      break;
+    case "weapon-both":
+      setBestNumericProperty(itemData, ["system.bonus"], 1, 0);
+      foundry.utils.setProperty(
+        itemData,
+        "system.damage",
+        applyFlatBonusToFormula(foundry.utils.getProperty(itemData, "system.damage"), 1)
+      );
+      break;
+    case "armor-light": {
+      const weight6 = getWeight6Value(itemData);
+      foundry.utils.setProperty(itemData, "system.weight6", weight6 <= 6 ? 1 : Math.max(0, weight6 - 6));
+      break;
+    }
+    case "armor-ac":
+      setBestNumericProperty(itemData, ["system.aac.value", "system.aac"], 1, 0);
+      setBestNumericProperty(itemData, ["system.ac.value", "system.ac"], -1, 9);
+      break;
+    case "instrument-perf-1":
+    case "instrument-perf-2":
+      break;
+  }
+
+  return itemData;
+}
+
+function prepareOwnedItemData(sourceItem, masterworkOption = null) {
   const itemData = foundry.utils.deepClone(sourceItem.toObject());
 
   delete itemData._id;
@@ -631,7 +857,7 @@ function prepareOwnedItemData(sourceItem) {
   if (itemData.system?.hasOwnProperty("favorite")) itemData.system.favorite = false;
   if (itemData.system?.quantity?.value != null) itemData.system.quantity.value = 1;
 
-  return itemData;
+  return applyMasterworkToItemData(itemData, masterworkOption);
 }
 
 async function deductActorMoney(actor, totalPriceGp) {
@@ -673,13 +899,13 @@ async function deductActorMoney(actor, totalPriceGp) {
   }
 }
 
-async function addPurchasedItems(actor, shopItem, quantity) {
-  if (shopItem.type === "item") {
+async function addPurchasedItems(actor, itemData, quantity) {
+  if (itemData.type === "item") {
     const existing = actor.items.find(
       (item) =>
         item.type === "item" &&
-        item.name === shopItem.name &&
-        (item.system.subtype ?? "") === (shopItem.system.subtype ?? "")
+        item.name === itemData.name &&
+        (item.system.subtype ?? "") === (itemData.system.subtype ?? "")
     );
 
     if (existing) {
@@ -689,24 +915,24 @@ async function addPurchasedItems(actor, shopItem, quantity) {
     }
   }
 
-  const itemData = Array.from({ length: quantity }, () => prepareOwnedItemData(shopItem));
+  const documents = Array.from({ length: quantity }, () => foundry.utils.deepClone(itemData));
 
-  if (shopItem.type === "item") {
-    itemData[0].system.quantity.value = quantity;
-    await actor.createEmbeddedDocuments("Item", [itemData[0]]);
+  if (itemData.type === "item") {
+    documents[0].system.quantity.value = quantity;
+    await actor.createEmbeddedDocuments("Item", [documents[0]]);
     return;
   }
 
-  await actor.createEmbeddedDocuments("Item", itemData);
+  await actor.createEmbeddedDocuments("Item", documents);
 }
 
-async function createPurchaseChatMessage(actor, item, quantity, totalPriceGp) {
+async function createPurchaseChatMessage(actor, itemName, quantity, totalPriceGp) {
   await ChatMessage.create({
     speaker: ChatMessage.getSpeaker({ actor }),
     content: game.i18n.format("ARKSSHOP.Messages.Purchase", {
       actor: actor.name,
       quantity,
-      item: item.name,
+      item: itemName,
       cost: formatGp(totalPriceGp)
     })
   });
@@ -728,7 +954,7 @@ async function createSplitCostsChatMessage(totalCostGp, paidBy) {
   });
 }
 
-async function purchaseShopItem({ actorId, itemUuid, quantity }) {
+async function purchaseShopItem({ actorId, itemUuid, quantity, masterworkId = "" }) {
   const actor = game.actors.get(actorId);
   if (!actorId || !actor || actor.type !== "character" || (!game.user.isGM && !actor.isOwner)) {
     throw new Error(game.i18n.localize("ARKSSHOP.Errors.NoCharacter"));
@@ -743,27 +969,33 @@ async function purchaseShopItem({ actorId, itemUuid, quantity }) {
     throw new Error(game.i18n.localize("ARKSSHOP.Errors.InvalidQuantity"));
   }
 
-  const totalPriceGp = getItemCost(shopItem) * quantity;
+  const masterworkOption = getMasterworkOption(shopItem, masterworkId);
+  if (masterworkId && !masterworkOption) {
+    throw new Error(game.i18n.localize("ARKSSHOP.Errors.InvalidMasterwork"));
+  }
+
+  const purchasedItemData = prepareOwnedItemData(shopItem, masterworkOption);
+  const totalPriceGp = getMasterworkAdjustedCost(shopItem, masterworkOption) * quantity;
   if (actor.getTotalMoneyGC() < totalPriceGp) {
     throw new Error(
       game.i18n.format("ARKSSHOP.Errors.NotEnoughGoldForItem", {
         actor: actor.name,
         quantity,
-        item: shopItem.name,
+        item: purchasedItemData.name,
         cost: formatGp(totalPriceGp)
       })
     );
   }
 
   await deductActorMoney(actor, totalPriceGp);
-  await addPurchasedItems(actor, shopItem, quantity);
-  await createPurchaseChatMessage(actor, shopItem, quantity, totalPriceGp);
+  await addPurchasedItems(actor, purchasedItemData, quantity);
+  await createPurchaseChatMessage(actor, purchasedItemData.name, quantity, totalPriceGp);
 
   ui.notifications.info(
     game.i18n.format("ARKSSHOP.Messages.PurchaseNotice", {
       actor: actor.name,
       quantity,
-      item: shopItem.name,
+      item: purchasedItemData.name,
       cost: formatGp(totalPriceGp)
     })
   );

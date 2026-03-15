@@ -12,6 +12,34 @@
     "EmptyCharacters": "No owned character is available for purchases.",
     "EmptyInventory": "No sellable shop items were found in the selected compendiums.",
     "Buy": "Buy",
+    "Masterwork": {
+      "Label": "Variant",
+      "Standard": "Standard",
+      "NoteLabel": "Masterwork",
+      "Options": {
+        "WeaponHit": "Masterwork: +1 hit (+{price} gp)",
+        "WeaponHitName": "Masterwork +1 Hit",
+        "WeaponHitSummary": "Adds +1 to attack throws.",
+        "WeaponDamage": "Masterwork: +1 damage (+{price} gp)",
+        "WeaponDamageName": "Masterwork +1 Damage",
+        "WeaponDamageSummary": "Adds +1 damage.",
+        "WeaponBoth": "Masterwork: +1 hit and damage (+{price} gp)",
+        "WeaponBothName": "Masterwork +1 Hit and Damage",
+        "WeaponBothSummary": "Adds +1 to attack throws and +1 damage.",
+        "ArmorLight": "Masterwork: lighter by 1 stone (+{price} gp)",
+        "ArmorLightName": "Masterwork Lightened",
+        "ArmorLightSummary": "Reduces encumbrance by one stone; one-stone armor or shields count as one item instead.",
+        "ArmorAc": "Masterwork: +1 AC (+{price} gp)",
+        "ArmorAcName": "Masterwork +1 AC",
+        "ArmorAcSummary": "Improves armor class by 1 without changing weight.",
+        "InstrumentOne": "Masterwork: +1 Performance (+{price} gp)",
+        "InstrumentOneName": "Masterwork +1 Performance",
+        "InstrumentOneSummary": "Grants +1 to Performance throws.",
+        "InstrumentTwo": "Masterwork: +2 Performance (+{price} gp)",
+        "InstrumentTwoName": "Masterwork +2 Performance",
+        "InstrumentTwoSummary": "Grants +2 to Performance throws."
+      }
+    },
     "SplitCosts": {
       "Button": "Split Costs",
       "Title": "Split Costs",
@@ -78,6 +106,7 @@
     "Errors": {
       "NoCharacter": "Select a character you own before buying items.",
       "InvalidItem": "That shop item could not be loaded.",
+      "InvalidMasterwork": "That masterwork option is not valid for this item.",
       "InvalidQuantity": "Enter a quantity of at least 1.",
       "NotEnoughGold": "The selected character does not have enough money.",
       "NotEnoughGoldForItem": "{actor} cannot afford {quantity} {item} for {cost} gp.",

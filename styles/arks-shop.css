@@ -176,6 +176,28 @@
   gap: 0.25rem;
 }
 
+.arks-shop-item__variant {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  max-width: 320px;
+}
+
+.arks-shop-item__variant select {
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 8px;
+  font: inherit;
+  min-height: 2.2rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.arks-shop-item__variant-summary {
+  color: #52606d;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  min-height: 1.1rem;
+}
+
 .arks-shop-item__name {
   background: none;
   border: 0;
