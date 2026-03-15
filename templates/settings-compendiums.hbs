@@ -1,0 +1,25 @@
+<form class="arks-shop-compendium-settings">
+  <section class="arks-shop-compendium-settings__header">
+    <p>{{localize "ARKSSHOP.Settings.Compendiums.FormIntro"}}</p>
+  </section>
+
+  <section class="arks-shop-compendium-settings__list">
+    {{#if compendiums.length}}
+      {{#each compendiums}}
+        <label class="arks-shop-compendium-settings__row">
+          <input id="{{fieldId}}" type="checkbox" name="compendiums" value="{{collection}}" {{checked checked}}>
+          <span class="arks-shop-compendium-settings__label">{{label}}</span>
+          <span class="arks-shop-compendium-settings__package">{{packageName}}</span>
+        </label>
+      {{/each}}
+    {{else}}
+      <p>{{localize "ARKSSHOP.Settings.Compendiums.NoneFound"}}</p>
+    {{/if}}
+  </section>
+
+  <footer class="sheet-footer flexrow">
+    <button type="submit">
+      <i class="fas fa-save"></i> {{localize "SETTINGS.Save"}}
+    </button>
+  </footer>
+</form>

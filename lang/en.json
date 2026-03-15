@@ -1,0 +1,57 @@
+{
+  "ARKSSHOP": {
+    "Title": "ARKS Shop",
+    "Subtitle": "Buy gear from selected compendiums",
+    "Description": "Browse the selected equipment compendiums, choose a player-owned character, and purchase items directly into that actor's inventory.",
+    "OpenShop": "Open Shop",
+    "NoCompendiumsSelected": "No equipment compendiums selected.",
+    "SelectedCompendiums": "Selected compendiums",
+    "CharacterLabel": "Character",
+    "SearchLabel": "Search",
+    "SearchPlaceholder": "Search by item or pack",
+    "AvailableGold": "Available gold",
+    "EmptyCharacters": "No owned character is available for purchases.",
+    "EmptyInventory": "No sellable shop items were found in the selected compendiums.",
+    "Buy": "Buy",
+    "ChatSeedMessage": "ARKS Shop boilerplate is active.",
+    "ItemTypes": {
+      "item": "Misc",
+      "weapon": "Weapon",
+      "armor": "Armor"
+    },
+    "Keybindings": {
+      "OpenShop": {
+        "Name": "Open shop window",
+        "Hint": "Open the ARKS Shop boilerplate window."
+      }
+    },
+    "Settings": {
+      "ShowButton": {
+        "Name": "Show Item Directory button",
+        "Hint": "Adds an Open Shop button to the footer of the Item Directory."
+      },
+      "Compendiums": {
+        "Name": "Selected equipment compendiums",
+        "Hint": "Stores the compendium collections the shop can read from.",
+        "MenuLabel": "Equipment compendiums",
+        "MenuButton": "Configure",
+        "MenuHint": "Choose which equipment compendiums ARKS Shop should use.",
+        "FormIntro": "Select the item compendiums that should populate the shop. Eligible packs are selected by default on first load.",
+        "NoneFound": "No equipment-like item compendiums were found."
+      }
+    },
+    "Errors": {
+      "NoCharacter": "Select a character you own before buying items.",
+      "InvalidItem": "That shop item could not be loaded.",
+      "InvalidQuantity": "Enter a quantity of at least 1.",
+      "NotEnoughGold": "The selected character does not have enough money.",
+      "NotEnoughGoldForItem": "{actor} cannot afford {quantity} {item} for {cost} gp.",
+      "CannotMakeChange": "The selected character cannot make exact change with the carried coin denominations.",
+      "PurchaseFailed": "The purchase could not be completed."
+    },
+    "Messages": {
+      "Purchase": "<p><strong>{actor}</strong> bought {quantity} x {item} for {cost} gp.</p>",
+      "PurchaseNotice": "{actor} bought {quantity} x {item} for {cost} gp."
+    }
+  }
+}

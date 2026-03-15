@@ -1,0 +1,72 @@
+<section class="arks-shop-shell">
+  <header class="arks-shop-shell__hero">
+    <div>
+      <h2>{{title}}</h2>
+      <p class="arks-shop-shell__subtitle">{{subtitle}}</p>
+      <p>{{description}}</p>
+    </div>
+    <div class="arks-shop-shell__hero-meta">
+      <div>
+        <strong>{{localize "ARKSSHOP.SelectedCompendiums"}}:</strong> {{selectedPackCount}}
+      </div>
+      <div>{{selectedPackNames}}</div>
+    </div>
+  </header>
+
+  <section class="arks-shop-shell__toolbar">
+    <label class="arks-shop-shell__field">
+      <span>{{localize "ARKSSHOP.CharacterLabel"}}</span>
+      <select name="actorId">
+        {{#each characters}}
+          <option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>
+        {{/each}}
+      </select>
+    </label>
+
+    <label class="arks-shop-shell__field">
+      <span>{{localize "ARKSSHOP.SearchLabel"}}</span>
+      <input type="search" name="search" value="{{searchTerm}}" placeholder="{{localize 'ARKSSHOP.SearchPlaceholder'}}">
+    </label>
+
+    <div class="arks-shop-shell__wallet">
+      <span>{{localize "ARKSSHOP.AvailableGold"}}</span>
+      <strong>{{selectedActorGold}} gp</strong>
+    </div>
+  </section>
+
+  {{#unless hasCharacters}}
+    <section class="arks-shop-shell__empty">
+      <p>{{localize "ARKSSHOP.EmptyCharacters"}}</p>
+    </section>
+  {{/unless}}
+
+  {{#unless hasItems}}
+    <section class="arks-shop-shell__empty">
+      <p>{{localize "ARKSSHOP.EmptyInventory"}}</p>
+    </section>
+  {{/unless}}
+
+  {{#if hasItems}}
+    <section class="arks-shop-shell__inventory">
+      {{#each items}}
+        <article class="arks-shop-item" data-item-uuid="{{uuid}}" data-search="{{searchText}}">
+          <div class="arks-shop-item__image" style="background-image: url({{img}})"></div>
+
+          <div class="arks-shop-item__details">
+            <button type="button" class="arks-shop-item__name" data-action="open-source">{{name}}</button>
+            <div class="arks-shop-item__meta">{{typeLabel}} | {{sourceLabel}}</div>
+          </div>
+
+          <div class="arks-shop-item__price">{{formattedPrice}} gp</div>
+
+          <div class="arks-shop-item__controls">
+            <input type="number" name="quantity" min="1" step="1" value="1">
+            <button type="button" data-action="buy-item" {{#unless canPurchase}}disabled{{/unless}}>
+              {{localize "ARKSSHOP.Buy"}}
+            </button>
+          </div>
+        </article>
+      {{/each}}
+    </section>
+  {{/if}}
+</section>

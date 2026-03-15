@@ -1,0 +1,208 @@
+.arks-shop-app {
+  --arks-shop-accent: #276749;
+  --arks-shop-accent-dark: #1f4f38;
+  --arks-shop-border: #cbd5d0;
+  --arks-shop-surface: #f7faf7;
+}
+
+.arks-shop-app .window-content {
+  background: linear-gradient(180deg, #fcfdfc 0%, var(--arks-shop-surface) 100%);
+  color: #1f2933;
+  padding: 1rem;
+}
+
+.arks-shop-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.arks-shop-shell__hero,
+.arks-shop-shell__toolbar,
+.arks-shop-shell__inventory,
+.arks-shop-shell__empty,
+.arks-shop-compendium-settings__header,
+.arks-shop-compendium-settings__list {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.arks-shop-shell__hero {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+}
+
+.arks-shop-shell__hero h2 {
+  margin: 0 0 0.5rem;
+}
+
+.arks-shop-shell__subtitle {
+  color: #52606d;
+  margin: 0;
+}
+
+.arks-shop-shell__hero-meta {
+  color: #52606d;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.arks-shop-shell__toolbar {
+  align-items: end;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+}
+
+.arks-shop-shell__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.arks-shop-shell__field input,
+.arks-shop-shell__field select {
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+}
+
+.arks-shop-shell__wallet {
+  align-items: center;
+  background: rgba(39, 103, 73, 0.08);
+  border: 1px solid rgba(39, 103, 73, 0.2);
+  border-radius: 10px;
+  display: grid;
+  gap: 0.15rem;
+  min-height: 100%;
+  padding: 0.75rem 1rem;
+}
+
+.arks-shop-shell__inventory {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.arks-shop-item {
+  align-items: center;
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 48px minmax(0, 1fr) 100px 160px;
+  padding: 0.75rem;
+}
+
+.arks-shop-item__image {
+  background-color: rgba(39, 103, 73, 0.08);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  border-radius: 10px;
+  height: 48px;
+  width: 48px;
+}
+
+.arks-shop-item__details {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.arks-shop-item__name {
+  background: none;
+  border: 0;
+  color: #1f2933;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0;
+  text-align: left;
+}
+
+.arks-shop-item__meta {
+  color: #52606d;
+  font-size: 0.9rem;
+}
+
+.arks-shop-item__price {
+  font-weight: 700;
+  text-align: right;
+}
+
+.arks-shop-item__controls {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 70px 1fr;
+}
+
+.arks-shop-item__controls input {
+  border: 1px solid var(--arks-shop-border);
+  border-radius: 8px;
+  padding: 0.55rem 0.4rem;
+  text-align: center;
+}
+
+.arks-shop-item__controls button,
+.arks-shop-shell__actions button {
+  background: var(--arks-shop-accent);
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.6rem 0.9rem;
+}
+
+.arks-shop-shell__actions button:hover,
+.arks-shop-shell__actions button:focus,
+.arks-shop-item__controls button:hover,
+.arks-shop-item__controls button:focus {
+  background: var(--arks-shop-accent-dark);
+}
+
+.arks-shop-item__controls button:disabled {
+  background: #9aa5a1;
+  cursor: not-allowed;
+}
+
+.arks-shop-compendium-settings {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.arks-shop-compendium-settings__list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.arks-shop-compendium-settings__row {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto 1fr auto;
+}
+
+.arks-shop-compendium-settings__package {
+  color: #52606d;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 760px) {
+  .arks-shop-shell__hero,
+  .arks-shop-shell__toolbar,
+  .arks-shop-item,
+  .arks-shop-item__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .arks-shop-item__price {
+    text-align: left;
+  }
+}

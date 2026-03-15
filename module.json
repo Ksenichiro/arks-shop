@@ -1,0 +1,35 @@
+{
+  "id": "ARKS-Shop",
+  "title": "ARKS Shop",
+  "description": "Boilerplate shop module scaffold for the ARKS system.",
+  "authors": [
+    {
+      "name": "Andrii"
+    }
+  ],
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13.350"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/arks-shop.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "relationships": {
+    "systems": []
+  },
+  "url": "",
+  "manifest": "",
+  "download": "",
+  "socket": false
+}
