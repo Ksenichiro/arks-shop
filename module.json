@@ -9,7 +9,7 @@
   ],
   "version": "0.1.0",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "13.0",
     "verified": "13.350"
   },
   "esmodules": [
@@ -26,10 +26,15 @@
     }
   ],
   "relationships": {
-    "systems": []
+    "systems": [
+      {
+        "id": "acks",
+        "type": "system"
+      }
+    ]
   },
-  "url": "",
-  "manifest": "",
-  "download": "",
+  "url": "https://github.com/Ksenichiro/arks-shop",
+  "manifest": "https://github.com/Ksenichiro/arks-shop/releases/latest/download/module.json",
+  "download": "https://github.com/Ksenichiro/arks-shop/releases/download/0.1.0/module.zip",
   "socket": false
 }
