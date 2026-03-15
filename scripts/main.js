@@ -14,7 +14,21 @@ class ArksShopApp extends Application {
     super(options);
     this.selectedActorId = options.actorId ?? "";
     this.searchTerm = options.searchTerm ?? "";
+    this.availabilityFilter = options.availabilityFilter ?? "all";
+    this.compendiumFilters = new Set();
+    this.typeFilters = new Set();
+    this.#filtersInitialized = {
+      compendiums: false,
+      types: false
+    };
+    this.#knownFilterValues = {
+      compendiums: new Set(),
+      types: new Set()
+    };
   }
+
+  #filtersInitialized;
+  #knownFilterValues;
 
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -35,16 +49,15 @@ class ArksShopApp extends Application {
 
     const selectedActor = characters.find((actor) => actor.id === this.selectedActorId) ?? null;
     const selectedActorGold = selectedActor ? selectedActor.getTotalMoneyGC() : 0;
-    const selectedPackLabels = getSelectedPackLabels();
+    const selectedPacks = getSelectedEquipmentPacks();
     const items = await getShopInventory();
+    const typeKeys = [...new Set(items.map((item) => item.type))];
+
+    this.#syncToggleFilters("compendiums", selectedPacks.map((pack) => pack.collection), this.compendiumFilters);
+    this.#syncToggleFilters("types", typeKeys, this.typeFilters);
 
     return {
-      title: game.i18n.localize("ARKSSHOP.Title"),
-      subtitle: game.i18n.localize("ARKSSHOP.Subtitle"),
-      description: game.i18n.localize("ARKSSHOP.Description"),
       searchTerm: this.searchTerm,
-      selectedPackCount: selectedPackLabels.length,
-      selectedPackNames: selectedPackLabels.join(", ") || game.i18n.localize("ARKSSHOP.NoCompendiumsSelected"),
       hasCharacters: characters.length > 0,
       characters: characters.map((actor) => ({
         id: actor.id,
@@ -52,6 +65,33 @@ class ArksShopApp extends Application {
         selected: actor.id === this.selectedActorId
       })),
       selectedActorGold: formatGp(selectedActorGold),
+      compendiumFilters: selectedPacks.map((pack) => ({
+        id: pack.collection,
+        label: pack.metadata.label,
+        active: this.compendiumFilters.has(pack.collection)
+      })),
+      availabilityFilters: [
+        {
+          id: "all",
+          label: game.i18n.localize("ARKSSHOP.Filters.All"),
+          active: this.availabilityFilter === "all"
+        },
+        {
+          id: "available",
+          label: game.i18n.localize("ARKSSHOP.Filters.Available"),
+          active: this.availabilityFilter === "available"
+        },
+        {
+          id: "unavailable",
+          label: game.i18n.localize("ARKSSHOP.Filters.Unavailable"),
+          active: this.availabilityFilter === "unavailable"
+        }
+      ],
+      typeFilters: typeKeys.map((type) => ({
+        id: type,
+        label: getTypeLabel(type),
+        active: this.typeFilters.has(type)
+      })),
       hasItems: items.length > 0,
       items: items.map((item) => ({
         ...item,
@@ -71,21 +111,69 @@ class ArksShopApp extends Application {
 
     html.find("input[name='search']").on("input", (event) => {
       this.searchTerm = event.currentTarget.value.trim().toLowerCase();
-      this.#applySearchFilter(html);
+      this.#applyItemFilters(html);
     });
 
+    html.find("[data-action='toggle-filter']").on("click", this.#onToggleFilter.bind(this));
     html.find("[data-action='buy-item']").on("click", this.#onBuyItem.bind(this));
     html.find("[data-action='open-source']").on("click", this.#onOpenSource.bind(this));
 
-    this.#applySearchFilter(html);
+    this.#applyItemFilters(html);
   }
 
-  #applySearchFilter(html) {
+  #syncToggleFilters(key, values, activeSet) {
+    if (!this.#filtersInitialized[key]) {
+      values.forEach((value) => activeSet.add(value));
+      values.forEach((value) => this.#knownFilterValues[key].add(value));
+      this.#filtersInitialized[key] = true;
+      return;
+    }
+
+    const validValues = new Set(values);
+    for (const value of [...activeSet]) {
+      if (!validValues.has(value)) activeSet.delete(value);
+    }
+
+    for (const value of values) {
+      if (!this.#knownFilterValues[key].has(value)) {
+        activeSet.add(value);
+        this.#knownFilterValues[key].add(value);
+      }
+    }
+  }
+
+  #applyItemFilters(html) {
     html.find(".arks-shop-item").each((_, element) => {
       const searchIndex = element.dataset.search ?? "";
-      const matches = !this.searchTerm || searchIndex.includes(this.searchTerm);
+      const compendiumMatch = this.compendiumFilters.has(element.dataset.compendium);
+      const typeMatch = this.typeFilters.has(element.dataset.itemType);
+      const availabilityMatch =
+        this.availabilityFilter === "all" ||
+        (this.availabilityFilter === "available" && element.dataset.canPurchase === "true") ||
+        (this.availabilityFilter === "unavailable" && element.dataset.canPurchase === "false");
+      const searchMatch = !this.searchTerm || searchIndex.includes(this.searchTerm);
+      const matches = compendiumMatch && typeMatch && availabilityMatch && searchMatch;
       element.style.display = matches ? "" : "none";
     });
+  }
+
+  #onToggleFilter(event) {
+    event.preventDefault();
+
+    const { filterGroup, filterId } = event.currentTarget.dataset;
+    if (!filterGroup || !filterId) return;
+
+    if (filterGroup === "availability") {
+      this.availabilityFilter = filterId;
+    } else if (filterGroup === "compendium") {
+      if (this.compendiumFilters.has(filterId)) this.compendiumFilters.delete(filterId);
+      else this.compendiumFilters.add(filterId);
+    } else if (filterGroup === "type") {
+      if (this.typeFilters.has(filterId)) this.typeFilters.delete(filterId);
+      else this.typeFilters.add(filterId);
+    }
+
+    this.render(false);
   }
 
   async #onOpenSource(event) {
@@ -276,6 +364,7 @@ async function getShopInventory() {
           img: document.img,
           type: document.type,
           typeLabel: getTypeLabel(document.type),
+          sourceCollection: pack.collection,
           sourceLabel: pack.metadata.label,
           priceGp: getItemCost(document),
           searchText: `${document.name} ${pack.metadata.label} ${document.type}`.toLowerCase()

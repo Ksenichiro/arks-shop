@@ -1,18 +1,4 @@
 <section class="arks-shop-shell">
-  <header class="arks-shop-shell__hero">
-    <div>
-      <h2>{{title}}</h2>
-      <p class="arks-shop-shell__subtitle">{{subtitle}}</p>
-      <p>{{description}}</p>
-    </div>
-    <div class="arks-shop-shell__hero-meta">
-      <div>
-        <strong>{{localize "ARKSSHOP.SelectedCompendiums"}}:</strong> {{selectedPackCount}}
-      </div>
-      <div>{{selectedPackNames}}</div>
-    </div>
-  </header>
-
   <section class="arks-shop-shell__toolbar">
     <label class="arks-shop-shell__field">
       <span>{{localize "ARKSSHOP.CharacterLabel"}}</span>
@@ -34,6 +20,49 @@
     </div>
   </section>
 
+  <section class="arks-shop-shell__filters">
+    <div class="arks-shop-filter-tags">
+      {{#each compendiumFilters}}
+        <button
+          type="button"
+          class="arks-shop-filter-tag arks-shop-filter-tag--compendium {{#if active}}is-active{{else}}is-inactive{{/if}}"
+          data-action="toggle-filter"
+          data-filter-group="compendium"
+          data-filter-id="{{id}}"
+          aria-pressed="{{#if active}}true{{else}}false{{/if}}"
+        >
+          {{label}}
+        </button>
+      {{/each}}
+
+      {{#each availabilityFilters}}
+        <button
+          type="button"
+          class="arks-shop-filter-tag arks-shop-filter-tag--availability {{#if active}}is-active{{else}}is-inactive{{/if}}"
+          data-action="toggle-filter"
+          data-filter-group="availability"
+          data-filter-id="{{id}}"
+          aria-pressed="{{#if active}}true{{else}}false{{/if}}"
+        >
+          {{label}}
+        </button>
+      {{/each}}
+
+      {{#each typeFilters}}
+        <button
+          type="button"
+          class="arks-shop-filter-tag arks-shop-filter-tag--type {{#if active}}is-active{{else}}is-inactive{{/if}}"
+          data-action="toggle-filter"
+          data-filter-group="type"
+          data-filter-id="{{id}}"
+          aria-pressed="{{#if active}}true{{else}}false{{/if}}"
+        >
+          {{label}}
+        </button>
+      {{/each}}
+    </div>
+  </section>
+
   {{#unless hasCharacters}}
     <section class="arks-shop-shell__empty">
       <p>{{localize "ARKSSHOP.EmptyCharacters"}}</p>
@@ -49,7 +78,14 @@
   {{#if hasItems}}
     <section class="arks-shop-shell__inventory">
       {{#each items}}
-        <article class="arks-shop-item" data-item-uuid="{{uuid}}" data-search="{{searchText}}">
+        <article
+          class="arks-shop-item"
+          data-item-uuid="{{uuid}}"
+          data-search="{{searchText}}"
+          data-compendium="{{sourceCollection}}"
+          data-item-type="{{type}}"
+          data-can-purchase="{{#if canPurchase}}true{{else}}false{{/if}}"
+        >
           <div class="arks-shop-item__image" style="background-image: url({{img}})"></div>
 
           <div class="arks-shop-item__details">

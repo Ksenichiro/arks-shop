@@ -5,7 +5,6 @@
     "Description": "Browse the selected equipment compendiums, choose a player-owned character, and purchase items directly into that actor's inventory.",
     "OpenShop": "Open Shop",
     "NoCompendiumsSelected": "No equipment compendiums selected.",
-    "SelectedCompendiums": "Selected compendiums",
     "CharacterLabel": "Character",
     "SearchLabel": "Search",
     "SearchPlaceholder": "Search by item or pack",
@@ -18,6 +17,16 @@
       "item": "Misc",
       "weapon": "Weapon",
       "armor": "Armor"
+    },
+    "FilterGroups": {
+      "Compendiums": "Compendiums",
+      "Availability": "Availability",
+      "Types": "Item types"
+    },
+    "Filters": {
+      "All": "All",
+      "Available": "Available",
+      "Unavailable": "Unavailable"
     },
     "Keybindings": {
       "OpenShop": {

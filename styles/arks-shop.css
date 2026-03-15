@@ -16,8 +16,8 @@
   gap: 1rem;
 }
 
-.arks-shop-shell__hero,
 .arks-shop-shell__toolbar,
+.arks-shop-shell__filters,
 .arks-shop-shell__inventory,
 .arks-shop-shell__empty,
 .arks-shop-compendium-settings__header,
@@ -26,28 +26,6 @@
   border: 1px solid var(--arks-shop-border);
   border-radius: 10px;
   padding: 1rem;
-}
-
-.arks-shop-shell__hero {
-  align-items: start;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
-}
-
-.arks-shop-shell__hero h2 {
-  margin: 0 0 0.5rem;
-}
-
-.arks-shop-shell__subtitle {
-  color: #52606d;
-  margin: 0;
-}
-
-.arks-shop-shell__hero-meta {
-  color: #52606d;
-  display: grid;
-  gap: 0.35rem;
 }
 
 .arks-shop-shell__toolbar {
@@ -89,6 +67,81 @@
   gap: 0.15rem;
   min-height: 100%;
   padding: 0.75rem 1rem;
+}
+
+.arks-shop-shell__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.arks-shop-filter-tags {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.arks-shop-filter-tag {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-weight: 700;
+  justify-content: center;
+  min-width: 118px;
+  padding: 0.45rem 0.8rem;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+  white-space: nowrap;
+  width: auto;
+}
+
+.arks-shop-filter-tag.is-inactive {
+  opacity: 0.6;
+}
+
+.arks-shop-filter-tag.is-active {
+  opacity: 1;
+}
+
+.arks-shop-filter-tag--compendium {
+  background: rgba(112, 56, 214, 0.12);
+  border-color: rgba(112, 56, 214, 0.24);
+  color: #5d2eb5;
+}
+
+.arks-shop-filter-tag--compendium.is-active {
+  background: #7c3aed;
+  border-color: #6d28d9;
+  color: #fff;
+}
+
+.arks-shop-filter-tag--availability {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.22);
+  color: #1f7a38;
+}
+
+.arks-shop-filter-tag--availability.is-active {
+  background: #16a34a;
+  border-color: #15803d;
+  color: #fff;
+}
+
+.arks-shop-filter-tag--type {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
+}
+
+.arks-shop-filter-tag--type.is-active {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #fff;
 }
 
 .arks-shop-shell__inventory {
@@ -206,7 +259,6 @@
 }
 
 @media (max-width: 760px) {
-  .arks-shop-shell__hero,
   .arks-shop-shell__toolbar,
   .arks-shop-item,
   .arks-shop-item__controls {
